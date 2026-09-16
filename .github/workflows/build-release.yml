@@ -54,7 +54,7 @@ jobs:
           plutil -lint 'dist/行情栏.app/Contents/Info.plist'
           codesign --verify --deep --strict 'dist/行情栏.app'
           test -s 'dist/行情栏.app/Contents/Resources/AppIcon.icns'
-          lipo -verify_arch arm64 'dist/行情栏.app/Contents/MacOS/StockBar'
+          lipo 'dist/行情栏.app/Contents/MacOS/StockBar' -verify_arch arm64
       - name: Package ZIP and checksum
         env:
           APP_VERSION: ${{ steps.version.outputs.version }}
