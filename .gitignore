@@ -1,0 +1,16 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+
+# Local configuration and generated archives
+*.zip
+*.dmg
+*.log
+.env
+.env.*
+!.env.example
+*.p12
+*.p8
+*.mobileprovision
+state.json
