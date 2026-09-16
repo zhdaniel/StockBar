@@ -1,12 +1,29 @@
-# 行情栏 / StockBar
+# StockBar
 
 <img src="Assets/AppIcon.png" width="128" alt="StockBar 应用图标">
 
-轻量原生 macOS 菜单栏行情应用。Swift + AppKit + SwiftUI，无第三方依赖、无服务端。当前支持沪深 A 股和场内 ETF，macOS 13+。本次提供 Apple Silicon 构建；其他架构可在对应 Mac 上重新编译。
+StockBar is a native macOS menu bar stock ticker for China A-shares and exchange-traded funds (ETFs). It provides live quotes, a compact watchlist, rotating menu bar prices, multiple data providers, and a Liquid Glass interface on macOS 26.
+
+StockBar 是一款轻量的原生 macOS 菜单栏股票行情工具，支持沪深 A 股与场内 ETF。应用使用 Swift、SwiftUI 和 AppKit 开发，无第三方运行时依赖、无服务端、无账户系统，适合在 Mac 顶部菜单栏持续查看股票价格和涨跌幅。
+
+[![Build and Release](https://github.com/zhdaniel/StockBar/actions/workflows/build-release.yml/badge.svg)](https://github.com/zhdaniel/StockBar/actions/workflows/build-release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/zhdaniel/StockBar)](https://github.com/zhdaniel/StockBar/releases/latest)
+[![macOS 13+](https://img.shields.io/badge/macOS-13%2B-000000?logo=apple)](https://github.com/zhdaniel/StockBar)
+
+## 功能亮点
+
+- 原生 macOS 菜单栏股票行情：支持仅图标、固定行情文字和自选轮播。
+- A 股与场内 ETF 自选列表：按名称、拼音或证券代码搜索并排序。
+- 可插拔行情数据源：内置腾讯行情与东方财富，支持自动切换、失败退避和旧值标记。
+- SwiftUI + AppKit 原生界面：macOS 26 使用 Liquid Glass，macOS 13–15 自动使用传统毛玻璃。
+- 本地优先：自选和设置只保存在本机，不包含交易、下单、云同步或遥测。
+- Apple Silicon 自动构建：GitHub Releases 提供经过测试的 arm64 ZIP 和 SHA-256 校验文件。
+
+English search terms: **macOS menu bar stock ticker**, **Mac stock price widget**, **China A-share tracker**, **ETF watchlist**, **SwiftUI menu bar app**, **Liquid Glass macOS app**.
 
 ## 使用
 
-打开 `dist/行情栏.app`。菜单栏显示主标的涨跌，点击展开自选面板，右键菜单栏可退出。
+从 [GitHub Releases](https://github.com/zhdaniel/StockBar/releases/latest) 下载最新的 Apple Silicon ZIP，解压后将 `StockBar.app` 移入「应用程序」。菜单栏显示主标的涨跌，点击展开自选面板，右键菜单栏可退出。
 
 - 输入名称、拼音或六位代码搜索；东方财富提供代码搜索，腾讯提供名称/拼音搜索。
 - 点星标固定主标的；拖动行排序；行尾菜单移除自选。最多50个。
@@ -39,16 +56,16 @@
 cd StockBar
 swift test
 ./scripts/build-app.sh
-open dist/行情栏.app
+open dist/StockBar.app
 ```
 
 构建脚本可用 `STOCKBAR_BUILD_PATH` 指定中间产物目录，默认 `.build`。诊断入口：
 
 ```bash
 # 两个原生 Provider 各查询一次三个示例标的，输出到终端。
-dist/行情栏.app/Contents/MacOS/StockBar --smoke-test
+dist/StockBar.app/Contents/MacOS/StockBar --smoke-test
 # 以独立窗口验证同一套面板UI，正常使用不要加此参数。
-open dist/行情栏.app --args --qa-window
+open dist/StockBar.app --args --qa-window
 ```
 
 ## 可插拔来源设计
@@ -124,12 +141,14 @@ open dist/行情栏.app --args --qa-window
 
 ```bash
 # 先修改 VERSION 和 CHANGELOG.md，并提交到 main
-printf '0.5.3\n' > VERSION
+printf '0.5.4\n' > VERSION
 git add VERSION CHANGELOG.md
-git commit -m "Release 0.5.3"
+git commit -m "Release 0.5.4"
 git push origin main
-git tag -a v0.5.3 -m "StockBar v0.5.3"
-git push origin v0.5.3
+git tag -a v0.5.4 -m "StockBar v0.5.4"
+git push origin v0.5.4
 ```
 
 只需 GitHub 自动提供的 `GITHUB_TOKEN`，无需添加个人令牌。私有仓库的产物与 Releases 也仅对有访问权限的用户开放。当前使用 ad-hoc 签名，未配置 Developer ID 签名或公证。
+
+底部 `buy a coffe` 按钮可打开微信二维码浮层，点击关闭按钮、背景或按 Escape 关闭。应用仅展示静态图片，不会发起付款或收集支付信息。

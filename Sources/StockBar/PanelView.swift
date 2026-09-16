@@ -14,7 +14,7 @@ struct PanelView: View {
                     Image(systemName: "chart.xyaxis.line").font(.system(size: 19, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("行情栏").font(.system(size: 18, weight: .semibold))
+                    Text("StockBar").font(.system(size: 18, weight: .semibold))
                     Text("A 股 · 场内 ETF").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -35,12 +35,41 @@ struct PanelView: View {
                 Spacer()
                 Button { store.paused.toggle() } label: { Image(systemName: store.paused ? "play.fill" : "pause.fill") }
                     .buttonStyle(.borderless).help(store.paused ? "恢复自动刷新" : "暂停自动刷新").accessibilityLabel(store.paused ? "恢复自动刷新" : "暂停自动刷新")
+                Button("buy a coffe") { store.supportVisible = true }
+                    .buttonStyle(.borderless).font(.system(size: 11)).fixedSize()
+                    .help("微信扫码支持 StockBar")
                 Button("退出") { NSApplication.shared.terminate(nil) }.buttonStyle(.borderless).font(.system(size: 11)).foregroundStyle(.secondary)
             }.padding(.horizontal, 20).padding(.vertical, 13)
         }
         .frame(width: panelSize.width, height: panelSize.height)
         .modifier(PanelMaterial(enabled: store.preferences.glassEnabled))
         .tint(Color(red: 0.18, green: 0.39, blue: 0.75))
+        .overlay {
+            if store.supportVisible {
+                ZStack {
+                    Color.black.opacity(0.25).onTapGesture { store.supportVisible = false }
+                    VStack(spacing: 12) {
+                        HStack {
+                            Text("buy a coffe").font(.headline)
+                            Spacer()
+                            Button { store.supportVisible = false } label: { Image(systemName: "xmark.circle.fill").font(.title3) }
+                                .buttonStyle(.plain).foregroundStyle(.secondary).accessibilityLabel("关闭二维码")
+                        }
+                        if let url = Bundle.main.url(forResource: "SupportQR", withExtension: "jpg"), let image = NSImage(contentsOf: url) {
+                            Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                                .frame(maxHeight: panelSize.height - 150)
+                                .accessibilityLabel("微信收款二维码，请使用微信扫码")
+                        } else {
+                            Text("二维码暂不可用").foregroundStyle(.secondary)
+                        }
+                        Text("微信扫一扫，感谢支持").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding(18).frame(width: min(340, panelSize.width - 48))
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .shadow(radius: 12)
+                }.clipShape(RoundedRectangle(cornerRadius: 22))
+            }
+        }
     }
     private var watchlist: some View {
         VStack(spacing: 0) {

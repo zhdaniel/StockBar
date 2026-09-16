@@ -23,6 +23,7 @@ struct SavedState: Codable { var preferences: Preferences; var quotes: [String: 
     @Published var panelVisible = false
     @Published var sleeping = false
     @Published var rotationIndex = 0
+    @Published var supportVisible = false
     @Published var selectedPage = 0
     @Published var paused = false
     let registry = ProviderRegistry.standard()
@@ -168,7 +169,7 @@ struct SavedState: Codable { var preferences: Preferences; var quotes: [String: 
         preferenceChanged()
     }
     var menuTitle: String {
-        guard let instrument = displayedInstrument else { return "行情栏" }
+        guard let instrument = displayedInstrument else { return "StockBar" }
         let quote = quotes[instrument.id]
         let fullName = instrument.name == instrument.code ? (quote?.name ?? instrument.name) : instrument.name
         var label = preferences.menuLabel == "none" ? "" : preferences.menuLabel == "code" ? instrument.code : String(fullName.prefix(8))
@@ -216,7 +217,7 @@ struct SavedState: Codable { var preferences: Preferences; var quotes: [String: 
         do {
             if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
             loginEnabled = SMAppService.mainApp.status == .enabled
-            loginMessage = SMAppService.mainApp.status == .requiresApproval ? "请在系统设置 → 通用 → 登录项中允许行情栏。" : nil
+            loginMessage = SMAppService.mainApp.status == .requiresApproval ? "请在系统设置 → 通用 → 登录项中允许 StockBar。" : nil
         } catch { loginEnabled = SMAppService.mainApp.status == .enabled; loginMessage = error.localizedDescription }
     }
     func shutdown() { scheduler?.cancel(); activeFetch?.cancel(); searchTask?.cancel() }

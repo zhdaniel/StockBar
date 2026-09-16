@@ -51,10 +51,11 @@ jobs:
         run: |
           set -euo pipefail
           ./scripts/build-app.sh
-          plutil -lint 'dist/行情栏.app/Contents/Info.plist'
-          codesign --verify --deep --strict 'dist/行情栏.app'
-          test -s 'dist/行情栏.app/Contents/Resources/AppIcon.icns'
-          lipo 'dist/行情栏.app/Contents/MacOS/StockBar' -verify_arch arm64
+          plutil -lint 'dist/StockBar.app/Contents/Info.plist'
+          codesign --verify --deep --strict 'dist/StockBar.app'
+          test -s 'dist/StockBar.app/Contents/Resources/AppIcon.icns'
+          cmp Assets/SupportQR.jpg 'dist/StockBar.app/Contents/Resources/SupportQR.jpg'
+          lipo 'dist/StockBar.app/Contents/MacOS/StockBar' -verify_arch arm64
       - name: Package ZIP and checksum
         env:
           APP_VERSION: ${{ steps.version.outputs.version }}
@@ -63,7 +64,7 @@ jobs:
           set -euo pipefail
           mkdir -p release
           archive="StockBar-${APP_VERSION}-macOS-arm64.zip"
-          ditto -c -k --sequesterRsrc --keepParent 'dist/行情栏.app' "release/$archive"
+          ditto -c -k --sequesterRsrc --keepParent 'dist/StockBar.app' "release/$archive"
           cd release
           shasum -a 256 "$archive" > SHA256SUMS.txt
       - name: Upload build artifacts
@@ -101,7 +102,7 @@ jobs:
           cat > notes.md <<'EOF'
           原生 macOS 菜单栏行情应用，支持 A 股与场内 ETF。
 
-          下载 `StockBar-*-macOS-arm64.zip`，解压后将「行情栏.app」移入「应用程序」。
+          下载 `StockBar-*-macOS-arm64.zip`，解压后将「StockBar.app」移入「应用程序」。
           适用 Apple Silicon，最低 macOS 13；macOS 26 支持 Liquid Glass。
 
           此产物为 ad-hoc 签名，尚未经过 Apple Developer ID 签名和公证，首次运行可能被 Gatekeeper 拦截。

@@ -8,7 +8,7 @@ import StockBarCore
     private var localMonitor: Any?
     private var globalMonitor: Any?
     private let menuIcon: NSImage? = {
-        let image = NSImage(systemSymbolName: "chart.xyaxis.line", accessibilityDescription: "行情栏")
+        let image = NSImage(systemSymbolName: "chart.xyaxis.line", accessibilityDescription: "StockBar")
         image?.isTemplate = true; image?.size = NSSize(width: 17, height: 17)
         return image
     }()
@@ -26,7 +26,10 @@ import StockBarCore
         panel.level = .popUpMenu; panel.hasShadow = true; panel.isReleasedWhenClosed = false
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
             guard let self, self.panel.isVisible else { return event }
-            if event.type == .keyDown && event.keyCode == 53 { self.closePanel(); return nil }
+            if event.type == .keyDown && event.keyCode == 53 {
+                if self.store.supportVisible { self.store.supportVisible = false } else { self.closePanel() }
+                return nil
+            }
             if event.type != .keyDown, let window = event.window, window === self.previewWindow { self.closePanel() }
             return event
         }
@@ -41,7 +44,7 @@ import StockBarCore
         if ProcessInfo.processInfo.arguments.contains("--qa-window") {
             NSApp.setActivationPolicy(.regular)
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: appliedPanelSize.width, height: appliedPanelSize.height), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-            window.title = "行情栏 · 界面验证"
+            window.title = "StockBar · 界面验证"
             window.isOpaque = false; window.backgroundColor = .clear
             window.contentViewController = NSHostingController(rootView: PanelView(store: store, panelSize: appliedPanelSize))
             window.center(); window.makeKeyAndOrderFront(nil); previewWindow = window
@@ -51,9 +54,9 @@ import StockBarCore
     @objc private func togglePanel() {
         if NSApp.currentEvent?.type == .rightMouseUp {
             let menu = NSMenu()
-            let open = NSMenuItem(title: "打开行情栏", action: #selector(openPanel), keyEquivalent: ""); open.target = self; menu.addItem(open)
+            let open = NSMenuItem(title: "打开 StockBar", action: #selector(openPanel), keyEquivalent: ""); open.target = self; menu.addItem(open)
             let settings = NSMenuItem(title: "设置…", action: #selector(openSettings), keyEquivalent: ","); settings.target = self; menu.addItem(settings)
-            menu.addItem(.separator()); menu.addItem(withTitle: "退出行情栏", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+            menu.addItem(.separator()); menu.addItem(withTitle: "退出 StockBar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
             item.menu = menu; item.button?.performClick(nil); item.menu = nil
         } else if panel.isVisible { closePanel() } else { showPanel() }
     }
@@ -71,7 +74,7 @@ import StockBarCore
         panel.makeKeyAndOrderFront(nil)
         store.setPanelVisible(true)
     }
-    private func closePanel() { panel.orderOut(nil); store.setPanelVisible(previewWindow?.isVisible == true) }
+    private func closePanel() { store.supportVisible = false; panel.orderOut(nil); store.setPanelVisible(previewWindow?.isVisible == true) }
     func windowDidResignKey(_ notification: Notification) {
         // Native menus temporarily take key status; outside-click monitoring handles dismissal.
     }
@@ -97,8 +100,8 @@ import StockBarCore
                 button.attributedTitle = NSAttributedString(string: "")
                 button.image = menuIcon; button.imagePosition = .imageOnly
             }
-            button.toolTip = "行情栏 · 点击查看 \(store.preferences.instruments.count) 个自选"
-            button.setAccessibilityLabel("行情栏，点击打开自选行情")
+            button.toolTip = "StockBar · 点击查看 \(store.preferences.instruments.count) 个自选"
+            button.setAccessibilityLabel("StockBar，点击打开自选行情")
             return
         }
         button.image = nil; button.imagePosition = .noImage
@@ -117,7 +120,7 @@ import StockBarCore
         item.length = min(CGFloat(store.preferences.menuWidth), max(48, attributed.size().width + 16))
         button.cell?.lineBreakMode = .byTruncatingTail
         if !button.attributedTitle.isEqual(to: attributed) { button.attributedTitle = attributed }
-        button.setAccessibilityLabel("行情栏，\(title)")
+        button.setAccessibilityLabel("StockBar，\(title)")
     }
     func applicationWillTerminate(_ notification: Notification) {
         store?.shutdown()
