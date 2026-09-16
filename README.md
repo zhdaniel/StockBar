@@ -113,3 +113,23 @@ open dist/行情栏.app --args --qa-window
 - 暂停刘海行情功能，移除设置入口和悬浮窗口；旧配置不会重新开启它。
 - 新增应用图标，显示于 Finder、启动台及应用信息中。菜单栏继续使用适配深浅色的单色图标。
 - 弹出面板采用独立窗口，打开时定位并约束在屏幕内；Escape、再次点击菜单栏按钮或点击其他应用可关闭。
+
+## 自动构建与发布
+
+[Build and Release](https://github.com/zhdaniel/StockBar/actions/workflows/build-release.yml) 在 `main` 提交、PR 和手动运行时执行单元测试、构建 Apple Silicon 应用、校验签名并上传 ZIP 与 SHA-256 校验文件。可在对应 Actions 运行页下载产物，保留 14 天。
+
+推送 `v主版本.次版本.补丁版本` 标签会在构建成功后自动发布到 [GitHub Releases](https://github.com/zhdaniel/StockBar/releases)。标签必须与 `VERSION` 文件一致；未通过测试或版本校验不会发布。流程先创建草稿，附件上传完成后才正式发布；重新运行不会覆盖已发布版本。
+
+发布新版本示例：
+
+```bash
+# 先修改 VERSION 和 CHANGELOG.md，并提交到 main
+printf '0.5.2\n' > VERSION
+git add VERSION CHANGELOG.md
+git commit -m "Release 0.5.2"
+git push origin main
+git tag v0.5.2
+git push origin v0.5.2
+```
+
+只需 GitHub 自动提供的 `GITHUB_TOKEN`，无需添加个人令牌。私有仓库的产物与 Releases 也仅对有访问权限的用户开放。当前使用 ad-hoc 签名，未配置 Developer ID 签名或公证。
