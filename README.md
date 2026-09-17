@@ -141,14 +141,14 @@ open dist/StockBar.app --args --qa-window
 
 ```bash
 # 先修改 VERSION 和 CHANGELOG.md，并提交到 main
-printf '0.5.5\n' > VERSION
+printf '0.5.6\n' > VERSION
 git add VERSION CHANGELOG.md
-git commit -m "Release 0.5.5"
+git commit -m "Release 0.5.6"
 git push origin main
-git tag -a v0.5.5 -m "StockBar v0.5.5"
-git push origin v0.5.5
+git tag -a v0.5.6 -m "StockBar v0.5.6"
+git push origin v0.5.6
 ```
 
 只需 GitHub 自动提供的 `GITHUB_TOKEN`，无需添加个人令牌。私有仓库的产物与 Releases 也仅对有访问权限的用户开放。当前使用 ad-hoc 签名，未配置 Developer ID 签名或公证。
 
-底部 `buy a coffe` 按钮可打开微信二维码浮层，点击关闭按钮、背景或按 Escape 关闭。应用仅展示静态图片，不会发起付款或收集支付信息。
+底部咖啡杯图标可打开微信二维码浮层，悬停可查看按钮说明；点击关闭按钮、背景或按 Escape 关闭。应用仅展示静态图片，不会发起付款或收集支付信息。

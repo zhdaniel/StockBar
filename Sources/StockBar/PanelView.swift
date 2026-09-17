@@ -33,17 +33,18 @@ struct PanelView: View {
                 Text(store.sleeping || store.paused ? "自动刷新已暂停" : store.refreshing ? "更新中" : store.lastAttempt.map { "最近请求 \(store.time($0))" } ?? "等待行情")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
                 Spacer()
-                Button { store.paused.toggle() } label: { Image(systemName: store.paused ? "play.fill" : "pause.fill") }
-                    .buttonStyle(.borderless).help(store.paused ? "恢复自动刷新" : "暂停自动刷新").accessibilityLabel(store.paused ? "恢复自动刷新" : "暂停自动刷新")
-                Button { store.supportVisible = true } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "cup.and.saucer.fill")
-                        Text("buy a coffe")
+                HStack(spacing: 14) {
+                    footerButton(
+                        systemImage: store.paused ? "play.fill" : "pause.fill",
+                        help: store.paused ? "继续自动刷新" : "暂停自动刷新"
+                    ) { store.paused.toggle() }
+                    footerButton(systemImage: "cup.and.saucer.fill", help: "Buy a coffee") {
+                        store.supportVisible = true
+                    }
+                    footerButton(systemImage: "power", help: "退出 StockBar") {
+                        NSApplication.shared.terminate(nil)
                     }
                 }
-                    .buttonStyle(.borderless).font(.system(size: 11)).fixedSize()
-                    .help("微信扫码支持 StockBar")
-                Button("退出") { NSApplication.shared.terminate(nil) }.buttonStyle(.borderless).font(.system(size: 11)).foregroundStyle(.secondary)
             }.padding(.horizontal, 20).padding(.vertical, 13)
         }
         .frame(width: panelSize.width, height: panelSize.height)
@@ -229,6 +230,18 @@ struct PanelView: View {
     }
     private func sectionTitle(_ title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 4) { Text(title).font(.system(size: 13, weight: .semibold)); Text(subtitle).font(.system(size: 10)).foregroundStyle(.secondary) }
+    }
+    private func footerButton(systemImage: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .medium))
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(.secondary)
+        .help(help)
+        .accessibilityLabel(help)
     }
 }
 
