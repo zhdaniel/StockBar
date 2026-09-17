@@ -35,7 +35,12 @@ struct PanelView: View {
                 Spacer()
                 Button { store.paused.toggle() } label: { Image(systemName: store.paused ? "play.fill" : "pause.fill") }
                     .buttonStyle(.borderless).help(store.paused ? "恢复自动刷新" : "暂停自动刷新").accessibilityLabel(store.paused ? "恢复自动刷新" : "暂停自动刷新")
-                Button("buy a coffe") { store.supportVisible = true }
+                Button { store.supportVisible = true } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "cup.and.saucer.fill")
+                        Text("buy a coffe")
+                    }
+                }
                     .buttonStyle(.borderless).font(.system(size: 11)).fixedSize()
                     .help("微信扫码支持 StockBar")
                 Button("退出") { NSApplication.shared.terminate(nil) }.buttonStyle(.borderless).font(.system(size: 11)).foregroundStyle(.secondary)
