@@ -181,12 +181,12 @@ open dist/StockBar.app --args --qa-window
 
 ```bash
 # 先修改 VERSION 和 CHANGELOG.md，并提交到 main
-printf '0.5.6\n' > VERSION
+printf '0.5.7\n' > VERSION
 git add VERSION CHANGELOG.md
-git commit -m "Release 0.5.6"
+git commit -m "Release 0.5.7"
 git push origin main
-git tag -a v0.5.6 -m "StockBar v0.5.6"
-git push origin v0.5.6
+git tag -a v0.5.7 -m "StockBar v0.5.7"
+git push origin v0.5.7
 ```
 
 只需 GitHub 自动提供的 `GITHUB_TOKEN`，无需添加个人令牌。私有仓库的产物与 Releases 也仅对有访问权限的用户开放。当前使用 ad-hoc 签名，未配置 Developer ID 签名或公证。
