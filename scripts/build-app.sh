@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 build_path="${STOCKBAR_BUILD_PATH:-.build}"
 app_version="${STOCKBAR_VERSION:-$(cat VERSION)}"
-build_number="${STOCKBAR_BUILD_NUMBER:-7}"
+build_number="${STOCKBAR_BUILD_NUMBER:-8}"
 if [[ ! "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ ! "$build_number" =~ ^[0-9]+$ ]]; then
     echo "Invalid app version or build number" >&2
     exit 1
