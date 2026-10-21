@@ -162,7 +162,7 @@ struct PanelView: View {
                 }
                 Divider()
                 VStack(alignment: .leading, spacing: 12) {
-                    sectionTitle("菜单栏显示", subtitle: "仅图标节省空间，行情文字支持固定或轮播")
+                    sectionTitle("菜单栏显示", subtitle: "仅图标节省空间，行情文字支持固定或连续滚动")
                     Picker("显示样式", selection: $store.preferences.menuStyle) {
                         Text("仅图标").tag(MenuBarStyle.icon)
                         Text("行情文字").tag(MenuBarStyle.quotes)
@@ -192,9 +192,14 @@ struct PanelView: View {
                         .onChange(of: store.preferences.menuWidth) { _ in store.preferenceChanged() }
                     Picker("字号", selection: $store.preferences.menuFontSize) { Text("小 · 11").tag(11); Text("标准 · 12").tag(12); Text("大 · 13").tag(13) }
                         .onChange(of: store.preferences.menuFontSize) { _ in store.preferenceChanged() }
-                    Toggle("轮播自选", isOn: $store.preferences.rotate).onChange(of: store.preferences.rotate) { _ in store.preferenceChanged() }
+                    Toggle("连续滚动自选", isOn: $store.preferences.rotate).onChange(of: store.preferences.rotate) { _ in store.preferenceChanged() }
                     if store.preferences.rotate {
-                        Picker("轮播间隔", selection: $store.preferences.rotationSeconds) { ForEach([5, 8, 15, 30], id: \.self) { Text("\($0)秒").tag($0) } }
+                        Picker("滚动速度", selection: $store.preferences.rotationSeconds) {
+                            Text("快").tag(5)
+                            Text("标准").tag(8)
+                            Text("慢").tag(15)
+                            Text("很慢").tag(30)
+                        }
                             .onChange(of: store.preferences.rotationSeconds) { _ in store.preferenceChanged() }
                     }
                     }

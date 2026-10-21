@@ -170,6 +170,9 @@ struct SavedState: Codable { var preferences: Preferences; var quotes: [String: 
     }
     var menuTitle: String {
         guard let instrument = displayedInstrument else { return "StockBar" }
+        return menuTitle(for: instrument)
+    }
+    func menuTitle(for instrument: Instrument) -> String {
         let quote = quotes[instrument.id]
         let fullName = instrument.name == instrument.code ? (quote?.name ?? instrument.name) : instrument.name
         var label = preferences.menuLabel == "none" ? "" : preferences.menuLabel == "code" ? instrument.code : String(fullName.prefix(8))

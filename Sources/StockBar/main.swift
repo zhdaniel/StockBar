@@ -1,6 +1,99 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 import StockBarCore
+
+private final class StatusTickerView: NSView {
+    private let horizontalPadding: CGFloat = 8
+    private var trackLayer = CALayer()
+    private var displayedValue: NSAttributedString?
+    private var scrolling = false
+    private var speed: CGFloat = 30
+    private var cycleWidth: CGFloat = 0
+    private var lastSize = CGSize.zero
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.masksToBounds = true
+        layer?.addSublayer(trackLayer)
+    }
+
+    required init?(coder: NSCoder) { nil }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    func setContent(_ value: NSAttributedString, scrolling: Bool, speed: CGFloat) {
+        guard displayedValue?.isEqual(to: value) != true || self.scrolling != scrolling || self.speed != speed else { return }
+        let phase = currentPhase
+        displayedValue = value
+        self.scrolling = scrolling
+        self.speed = speed
+        cycleWidth = max(1, ceil(value.size().width))
+        rebuildLayers(from: phase)
+    }
+
+    func stop() { trackLayer.removeAnimation(forKey: "stockbarMarquee") }
+
+    override func layout() {
+        super.layout()
+        guard bounds.size != lastSize, displayedValue != nil else { return }
+        rebuildLayers(from: currentPhase)
+    }
+
+    private var currentPhase: CGFloat {
+        guard cycleWidth > 0,
+              let number = trackLayer.presentation()?.value(forKeyPath: "transform.translation.x") as? NSNumber else { return 0 }
+        return ((-CGFloat(truncating: number) / cycleWidth).truncatingRemainder(dividingBy: 1) + 1).truncatingRemainder(dividingBy: 1)
+    }
+
+    private func rebuildLayers(from phase: CGFloat) {
+        guard let displayedValue else { return }
+        lastSize = bounds.size
+
+        let copies = scrolling ? max(2, Int(ceil(bounds.width / cycleWidth)) + 2) : 1
+        let originX = scrolling ? 0 : horizontalPadding
+        let nextTrack = CALayer()
+        nextTrack.frame = NSRect(x: originX, y: 0, width: cycleWidth * CGFloat(copies), height: bounds.height)
+        nextTrack.setAffineTransform(CGAffineTransform(translationX: scrolling ? -phase * cycleWidth : 0, y: 0))
+        let textHeight = ceil(displayedValue.size().height) + 2
+        let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+        for index in 0..<copies {
+            let textLayer = CATextLayer()
+            textLayer.string = displayedValue
+            textLayer.contentsScale = scale
+            textLayer.isWrapped = false
+            textLayer.truncationMode = .none
+            textLayer.alignmentMode = .left
+            textLayer.frame = NSRect(
+                x: CGFloat(index) * cycleWidth,
+                y: floor((bounds.height - textHeight) / 2),
+                width: cycleWidth,
+                height: textHeight
+            )
+            nextTrack.addSublayer(textLayer)
+        }
+        if scrolling, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { startScrolling(nextTrack, from: phase) }
+
+        let previousTrack = trackLayer
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        layer?.addSublayer(nextTrack)
+        trackLayer = nextTrack
+        CATransaction.setCompletionBlock { previousTrack.removeFromSuperlayer() }
+        CATransaction.commit()
+    }
+
+    private func startScrolling(_ layer: CALayer, from phase: CGFloat) {
+        let animation = CABasicAnimation(keyPath: "transform.translation.x")
+        animation.fromValue = -phase * cycleWidth
+        animation.toValue = -(phase + 1) * cycleWidth
+        animation.duration = CFTimeInterval(cycleWidth / max(1, speed))
+        animation.repeatCount = .infinity
+        animation.timingFunction = CAMediaTimingFunction(name: .linear)
+        animation.isRemovedOnCompletion = false
+        layer.add(animation, forKey: "stockbarMarquee")
+    }
+}
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var item: NSStatusItem!
@@ -15,6 +108,7 @@ import StockBarCore
     private var store: AppStore!
     private var previewWindow: NSWindow?
     private var appliedPanelSize = CGSize.zero
+    private var tickerView: StatusTickerView?
     private var observers: [NSObjectProtocol] = []
     private var screenObserver: NSObjectProtocol?
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -95,6 +189,8 @@ import StockBarCore
     private func updateTitle() {
         guard let button = item.button else { return }
         if store.preferences.menuStyle == .icon {
+            tickerView?.stop()
+            tickerView?.isHidden = true
             if button.image !== menuIcon {
                 item.length = NSStatusItem.squareLength
                 button.attributedTitle = NSAttributedString(string: "")
@@ -106,21 +202,71 @@ import StockBarCore
         }
         button.image = nil; button.imagePosition = .noImage
         let title = store.menuTitle
-        var color = NSColor.labelColor
         if let instrument = store.displayedInstrument, let quote = store.quotes[instrument.id] {
-            color = store.preferences.monochrome ? .labelColor : NSColor(store.color(quote))
             button.toolTip = "\(quote.name) \(store.price(quote, instrument: instrument))\n\(store.sourceName(quote.sourceID)) · 行情时间 \(store.time(quote.quoteTime))\(store.isOld(quote) ? "\n旧值 / 待更新" : "")"
         } else { button.toolTip = "点击管理自选行情" }
-        var fontSize = CGFloat(store.preferences.menuFontSize)
-        var attributed = NSAttributedString(string: title, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium), .foregroundColor: color])
-        while attributed.size().width > CGFloat(store.preferences.menuWidth - 16) && fontSize > 9 {
-            fontSize -= 0.5
-            attributed = NSAttributedString(string: title, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium), .foregroundColor: color])
+
+        let shouldScroll = store.rotatesMenuQuotes && store.preferences.instruments.count > 1
+        let attributed: NSAttributedString
+        if shouldScroll {
+            let sequence = NSMutableAttributedString()
+            let separator = NSAttributedString(
+                string: "\u{00A0}\u{00A0}\u{00A0}",
+                attributes: [
+                    .font: NSFont.monospacedDigitSystemFont(ofSize: CGFloat(store.preferences.menuFontSize), weight: .medium),
+                    .foregroundColor: NSColor.secondaryLabelColor
+                ]
+            )
+            sequence.append(separator)
+            for (index, instrument) in store.preferences.instruments.enumerated() {
+                sequence.append(attributedTitle(for: instrument))
+                if index < store.preferences.instruments.count - 1 { sequence.append(separator) }
+            }
+            attributed = sequence
+            item.length = CGFloat(store.preferences.menuWidth)
+        } else {
+            attributed = store.displayedInstrument.map(attributedTitle(for:)) ?? attributedTitle(text: title, color: .labelColor)
+            item.length = min(CGFloat(store.preferences.menuWidth), max(48, attributed.size().width + 16))
         }
-        item.length = min(CGFloat(store.preferences.menuWidth), max(48, attributed.size().width + 16))
-        button.cell?.lineBreakMode = .byTruncatingTail
-        if !button.attributedTitle.isEqual(to: attributed) { button.attributedTitle = attributed }
-        button.setAccessibilityLabel("StockBar，\(title)")
+        button.attributedTitle = NSAttributedString(string: "")
+        let ticker: StatusTickerView
+        if let tickerView {
+            ticker = tickerView
+        } else {
+            ticker = StatusTickerView(frame: button.bounds)
+            ticker.autoresizingMask = [.width, .height]
+            button.addSubview(ticker)
+            tickerView = ticker
+        }
+        ticker.isHidden = false
+        ticker.frame = button.bounds
+        ticker.setContent(attributed, scrolling: shouldScroll, speed: marqueeSpeed)
+        button.setAccessibilityLabel(shouldScroll ? "StockBar，连续滚动显示 \(store.preferences.instruments.count) 个自选" : "StockBar，\(title)")
+    }
+
+    private var marqueeSpeed: CGFloat {
+        switch store.preferences.rotationSeconds {
+        case 5: return 36
+        case 8: return 28
+        case 15: return 20
+        default: return 14
+        }
+    }
+
+    private func attributedTitle(for instrument: Instrument) -> NSAttributedString {
+        let quote = store.quotes[instrument.id]
+        let color = quote.map { store.preferences.monochrome ? NSColor.labelColor : NSColor(store.color($0)) } ?? .labelColor
+        return attributedTitle(text: store.menuTitle(for: instrument), color: color)
+    }
+
+    private func attributedTitle(text: String, color: NSColor) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [
+                .font: NSFont.monospacedDigitSystemFont(ofSize: CGFloat(store.preferences.menuFontSize), weight: .medium),
+                .foregroundColor: color
+            ]
+        )
     }
     func applicationWillTerminate(_ notification: Notification) {
         store?.shutdown()
